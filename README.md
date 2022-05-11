@@ -32,3 +32,7 @@ fg install
 
 ### Reminder
 This script was originally created by [ORIGINAL SCRIPT](https://github.com/Stane034/fg-antiCipher). I have made the code more correct and cleaner. And added a permission check so not everyone can run the command.
+
+
+### JOIN THE OFFICIAL DISCORD
+[FiveGuard Discord](https://discord.com/invite/KpBZXnH72q)
