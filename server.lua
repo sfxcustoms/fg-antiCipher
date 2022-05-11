@@ -72,7 +72,7 @@ RegisterCommand(
             print("^3[fiveguard.net]^0 = fg [ install / uninstall ]")
         end
     end,
-    true
+    false
 )
 
 function setAll(dir, bool)
