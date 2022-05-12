@@ -32,6 +32,8 @@ Cipher is a web panel that allows you to backdoor remote servers and receive the
 ### Note
 This script is an improved and cleaned version of [the original script](https://github.com/Stane034/fg-antiCipher) with more features and customizations.
 
+### Contribution
+Every type of contribution is greatly appreciated.
 
 ### Official Discord server
 [FiveGuard](https://discord.com/invite/KpBZXnH72q)
