@@ -130,18 +130,19 @@ function setAll(dir, bool)
                 local resourceDecleration = 'local resourceName = "' .. resourceName .. '"'
                 local code = [[
                     local originalHttpFunction = PerformHttpRequest
-                    PerformHttpRequest = PerformHttpRequestProxy;
+                    PerformHttpRequest = PerformHttpRequestProxy
                                         
                     local originalOpenFunction = io.open
-                    io.open = OpenIoProxy;
+                    io.open = OpenIoProxy
 
                     function PerformHttpRequestProxy(url, ...)
+                        -- todo: add some more checks to be sure that it's the backdoor and not just some other url with 'cipher' in it.
                         if string.find(url, 'cipher') then
-                            handlePossibleVulnerability();
+                            handlePossibleVulnerability()
                             return
                         end
 
-                        originalHttpFunction (url, ...)
+                        originalHttpFunction(url, ...)
                     end
 
                     function OpenIoProxy(file, permissions)
@@ -149,19 +150,24 @@ function setAll(dir, bool)
                             return
                         end
 
+                        -- todo: same thing here, more checks
                         if string.find(file, 'sessionmanager') then
-                            handlePossibleVulnerability();
+                            handlePossibleVulnerability()
                             return
                         end
 
                         originalOpenFunction(file, permissions)
                     end
 
-                    function handlePossibleVulnerability()
+                    function handlePossibleVulnerability(shouldExit)
+                        shouldExit = shouldExit or false
+
                         -- better logging? option for webhooks?
-                        print('Finded vuln resource : ' .. GetCurrentResourceName())
-                        Wait(5000)
-                        os.exit()
+                        print('^3[fiveguard.net]^0 Found vuln resource : ' .. GetCurrentResourceName())
+
+                        if shouldExit then
+                            os.exit()
+                        end
                     end
 ]]
                 file = io.open(dir .. "/" .. script .. ".lua", "w")
