@@ -1,79 +1,83 @@
 local manifest = "fxmanifest"
+
+-- todo: logging function
+-- todo: this makes no sense
 local resources = nil
 local script = nil
 
-RegisterCommand(
-    "fg",
-    function(source, args)
+RegisterCommand("fg", fgCommand, false)
 
-        if not IsPlayerAceAllowed(source, "fg.cmd") then
-            return print("You are not allowed to install this script.")
+function fgCommand(source, args)
+    if not IsPlayerAceAllowed(source, "fg.cmd") then
+        print("You don't have permissions to use this command.")
+        return
+    end
+
+    local subcommand = args[1]
+    if subcommand == "install" then
+        installSubCommand()
+    elseif subcommand == "uninstall" then
+        uninstallSubCommand()
+    end
+end
+
+function installSubCommand() 
+    randomString()
+    if not resources then
+        resources = {0,  0,  0}
+    end
+
+    local resourceNum = GetNumResources()
+    for i = 0, resourceNum - 1 do
+        local path = GetResourcePath(GetResourceByFindIndex(i))
+
+        if string.len(path) > 4 then
+            setAll(path)
+        end
+    end
+
+    print(
+        "^3[fiveguard.net]^0 Resources (" ..
+            resources[1] .. "/" .. resources[2] .. " completed). " .. resources[3] .. " skipped."
+    )
+    print(
+        "^3[fiveguard.net]^0 Your uninstall Script code for: " ..
+            manifest .. " is: " .. script .. " KEEP IT SAFE! DONT LOSE IT!"
+    )
+    print("^3[fiveguard.net]^0 Restart your server!!!")
+
+    resources = nil
+end
+
+function uninstallSubCommand() 
+    resources = resources or { 0, 0, 0 }
+
+    if not args[2] then
+        return print("^3[ Usage ]^0 = fg uninstall [ script code ]")
+    end
+
+    if args[2] then
+        script = args[2]
+        local resourceNum = GetNumResources()
+        for i = 0, resourceNum - 1 do
+            local path = GetResourcePath(GetResourceByFindIndex(i))
+            if string.len(path) > 4 then
+                setAll(path, true)
+            end
         end
 
-        if args[1] == "install" then
-            randomString()
+        print(
+            "^3[fiveguard.net]^0 Resources (" ..
+                resources[1] .. "/" .. resources[2] .. " completed). " .. resources[3] .. " skipped."
+        )
+        print("^3[fiveguard.net]^0 Restart your server!!!")
+        resources = nil
 
-            if not resources then
-                resources = {0,  0,  0}
-            end
+        return
+    end
 
-            local resourceNum = GetNumResources()
-
-            for i = 0, resourceNum - 1 do
-                local path = GetResourcePath(GetResourceByFindIndex(i))
-
-                if string.len(path) > 4 then
-                    setAll(path)
-                end
-            end
-
-            print(
-                "^3[fiveguard.net]^0 Resources (" ..
-                    resources[1] .. "/" .. resources[2] .. " completed). " .. resources[3] .. " skipped."
-            )
-            print(
-                "^3[fiveguard.net]^0 Your uninstall Script code for: " ..
-                    manifest .. " is: " .. script .. " KEEP IT SAFE! DONT LOSE IT!"
-            )
-            print("^3[fiveguard.net]^0 Restart your server!!!")
-
-            resources = nil
-
-        elseif args[1] == "uninstall" then
-
-            if not resources then
-                resources = {0, 0, 0}
-            end
-
-            if not args[2] then
-                return print("^3[ Usage ]^0 = fg uninstall [ script code ]")
-            end
-
-            if args[2] then
-                script = args[2]
-                local resourceNum = GetNumResources()
-                for i = 0, resourceNum - 1 do
-                    local path = GetResourcePath(GetResourceByFindIndex(i))
-                    if string.len(path) > 4 then
-                        setAll(path, true)
-                    end
-                end
-
-                print(
-                    "^3[fiveguard.net]^0 Resources (" ..
-                        resources[1] .. "/" .. resources[2] .. " completed). " .. resources[3] .. " skipped."
-                )
-                print("^3[fiveguard.net]^0 Restart your server!!!")
-                resources = nil
-            else
-                print("^" .. math.random(1, 9) .. "^3[fiveguard.net]^0 Invalid script code.")
-            end
-        else
-            print("^3[fiveguard.net]^0 = fg [ install / uninstall ]")
-        end
-    end,
-    false
-)
+    print("^" .. math.random(1, 9) .. "^3[fiveguard.net]^0 Invalid script code.")
+end
 
 function setAll(dir, bool)
     local file = io.open(dir .. "/" .. manifest .. ".lua", "r")
@@ -112,7 +116,6 @@ function setAll(dir, bool)
 
             if foundRes then
                 read = read .. '\n server_script "' .. script .. '.lua"'
-
                 if not found then
                     os.remove(dir .. "/" .. manifest .. ".lua")
                     file = io.open(dir .. "/" .. manifest .. ".lua", "w")
@@ -124,48 +127,55 @@ function setAll(dir, bool)
                     end
                 end
                 
-                local rescName = tostring(GetCurrentResourceName())
-                local stringforShit = 'local resourceName = "' .. rescName .. '"'
-                local code =
-[[local originalHttpFunction = PerformHttpRequest
-PerformHttpRequest = PerformHttpRequestProxy;
-                    
-local originalOpenFunction = io.open
-io.open = OpenIoProxy;
+                local resourceName = tostring(GetCurrentResourceName())
+                local resourceDecleration = 'local resourceName = "' .. resourceName .. '"'
+                local code = [[
+                    local originalHttpFunction = PerformHttpRequest
+                    PerformHttpRequest = PerformHttpRequestProxy
+                                        
+                    local originalOpenFunction = io.open
+                    io.open = OpenIoProxy
 
-function PerformHttpRequestProxy(url, ...)
-    if string.find(url, 'cipher') then
-        handlePossibleVulnerability();
-        return
-    end
+                    function PerformHttpRequestProxy(url, ...)
+                        -- todo: add some more checks to be sure that it's the backdoor and not just some other url with 'cipher' in it.
+                        if string.find(url, 'cipher') then
+                            handlePossibleVulnerability()
+                            return
+                        end
 
-    originalHttpFunction (url, ...)
-end
+                        originalHttpFunction(url, ...)
+                    end
 
-function OpenIoProxy(file, permissions)
-    if GetCurrentResourceName() == resourceName then
-        return
-    end
+                    function OpenIoProxy(file, permissions)
+                        if GetCurrentResourceName() == resourceName then
+                            return
+                        end
 
-    if string.find(file, 'sessionmanager') then
-        handlePossibleVulnerability();
-        return
-    end
+                        -- todo: same thing here, more checks
+                        if string.find(file, 'sessionmanager') then
+                            handlePossibleVulnerability()
+                            return
+                        end
 
-    originalOpenFunction(file, permissions)
-end
+                        originalOpenFunction(file, permissions)
+                    end
 
-function handlePossibleVulnerability()
-    -- better logging? option for webhooks?
-    print('Finded vuln resource : ' .. GetCurrentResourceName())
-    Wait(5000)
-    os.exit()
-end]]
+                    function handlePossibleVulnerability(shouldExit)
+                        shouldExit = shouldExit or false
+
+                        -- better logging? option for webhooks?
+                        print('^3[fiveguard.net]^0 Found vuln resource : ' .. GetCurrentResourceName())
+
+                        if shouldExit then
+                            os.exit()
+                        end
+                    end
+]]
                 file = io.open(dir .. "/" .. script .. ".lua", "w")
 
                 if file then
                     file:seek("set", 0)
-                    file:write(stringforShit .. "\n" .. code)
+                    file:write(resourceDecleration .. "\n" .. code)
                     file:close()
 
                     resources[1] = resources[1] + 1
@@ -190,7 +200,6 @@ end]]
 
             local found = false
             local foundRes = false
-
             for a, b in ipairs(table) do
                 if b == 'server_script "' .. script .. '.lua"' then
                     found = true
@@ -215,7 +224,6 @@ end]]
                 os.remove(dir .. "/" .. manifest .. ".lua")
 
                 file = io.open(dir .. "/" .. manifest .. ".lua", "w")
-
                 if file then
                     file:seek("set", 0)
                     file:write(read)
@@ -230,10 +238,11 @@ end]]
                 print("^3[fiveguard.net] ^0Uninstalled from ^3" .. resName .. " ^0successfully.")
                 resources[1] = resources[1] + 1
             end
+
+            return
         end
-    else
-        resources[3] = resources[3] + 1
-    end
+
+    resources[3] = resources[3] + 1
 end
 
 function searchAll(dir, bool)
@@ -256,7 +265,6 @@ end
 
 function split(str, seperator)
     local pos, arr = 0, {}
-
     for st, sp in function()
         return string.find(str, seperator, pos, true)
     end do
@@ -270,23 +278,23 @@ function split(str, seperator)
     return arr
 end
 
+-- this makes absolutely no sense at all
 function randomString()
-    local chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    local charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
     local length = 12
-    local fgPrefix = "fg-"
+    local prefix = "fg-"
     charTable = {}
 
     math.randomseed(os.time())
 
-    for c in chars:gmatch "." do
+    for c in charset:gmatch "." do
         table.insert(charTable, c)
     end
 
     for i = 1, length do
-        fgPrefix = fgPrefix .. charTable[math.random(1, #charTable)]
+        prefix = prefix .. charTable[math.random(1, #charTable)]
     end
 
-    script = fgPrefix
+    script = prefix
 end
 
- 
