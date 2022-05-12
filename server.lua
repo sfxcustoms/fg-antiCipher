@@ -1,4 +1,7 @@
 local manifest = "fxmanifest"
+
+-- todo: logging function
+-- todo: this makes no sense
 local resources = nil
 local script = nil
 
@@ -47,9 +50,7 @@ function installSubCommand()
 end
 
 function uninstallSubCommand() 
-    if not resources then
-        resources = { 0, 0, 0 }
-    end
+    resources = resources or { 0, 0, 0 }
 
     if not args[2] then
         return print("^3[ Usage ]^0 = fg uninstall [ script code ]")
