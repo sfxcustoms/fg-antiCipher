@@ -13,10 +13,10 @@ function fgCommand(source, args)
         return
     end
 
-    local subcommand = args[1]
-    if subcommand == "install" then
+    local subCommand = args[1]
+    if subCommand == "install" then
         installSubCommand()
-    elseif subcommand == "uninstall" then
+    elseif subCommand == "uninstall" then
         uninstallSubCommand()
     end
 end
